@@ -14,7 +14,7 @@
                 {
                     "id": 146,
                     "siteName": "\u8bed\u96c0",
-                    "siteUrl": "http://www.yuque.com/",
+                    "siteUrl": "https://timestore.yuque.com/",
                     "logoResourceId": "images/Site/yuque.png"
                 },
                 {
@@ -207,7 +207,7 @@
                     "id": 39,
                     "siteName": "\u6155\u8bfe\u7f51",
                     "siteUrl": "https://www.imooc.com/",
-                    "logoResourceId": "images/Site/43536a185298445b9c90972078b4774e.png"
+                    "logoResourceId": "images/Site/imooc.png"
                 }
             ]
         },
