@@ -593,6 +593,8 @@ searchEngineLogoPath = staticServerURI + "img/"; (function(f, h) {
     k = b.find("#site-class-group-right-btn");
     e = e.find("#web-site-body");
     var p = e.find(".web-group");
+    a.categoryLoaded = !1;
+    a.categoryLoadDef = $.Deferred();
     $.ajax({
         url: serverURI + "data/category.json",
         type: "get",
@@ -603,16 +605,12 @@ searchEngineLogoPath = staticServerURI + "img/"; (function(f, h) {
         },
         dataType: "json",
         success: function(c) {
-            // var siteClasses = c;
-            // console.log(c);
-            $.extend(!0, a, {
-                siteClasseMap: c,
-                siteListTypeChange: function(b, c) {
-                    a.initialised && a.siteListRotateX(c);
-                    // b ? (a.loadSiteClass(a.siteClasseMap.innerClasses), a.initialised && Search_Engine.search_type != Search_Engine.types.baidu && Search_Engine.change2Baidu(), a.siteListForm = 0, MyLocalStore.saveSiteListForm(0)) : (a.loadSiteClass(a.siteClasseMap.outerClasses), a.initialised && Search_Engine.search_type != Search_Engine.types.google && Search_Engine.change2Google(), a.siteListForm = 1, MyLocalStore.saveSiteListForm(1))
-                    b ? (a.loadSiteClass(a.siteClasseMap.innerClasses), a.initialised && Search_Engine.search_type != Search_Engine.types.baidu , a.siteListForm = 0, MyLocalStore.saveSiteListForm(0)) : (a.loadSiteClass(a.siteClasseMap.outerClasses), a.initialised && Search_Engine.search_type != Search_Engine.types.google, a.siteListForm = 1, MyLocalStore.saveSiteListForm(1))
-                }
-            })
+            a.siteClasseMap = c;
+            a.categoryLoaded = !0;
+            a.categoryLoadDef.resolve(c)
+        },
+        error: function() {
+            a.categoryLoadDef.reject()
         }
     });
     $.extend(!0, a, {
@@ -637,6 +635,10 @@ searchEngineLogoPath = staticServerURI + "img/"; (function(f, h) {
         // siteClasseMap: $.parseJSON(siteClasses),
         pageSize: 6,
         siteClasses: [],
+        siteListTypeChange: function(b, c) {
+            a.initialised && a.siteListRotateX(c);
+            b ? (a.loadSiteClass(a.siteClasseMap.innerClasses), a.initialised && Search_Engine.search_type != Search_Engine.types.baidu, a.siteListForm = 0, MyLocalStore.saveSiteListForm(0)) : (a.loadSiteClass(a.siteClasseMap.outerClasses), a.initialised && Search_Engine.search_type != Search_Engine.types.google, a.siteListForm = 1, MyLocalStore.saveSiteListForm(1))
+        },
         locked: !1,
         visible: !1,
         initView: function(b) {
@@ -704,18 +706,15 @@ searchEngineLogoPath = staticServerURI + "img/"; (function(f, h) {
             a.classGroupBodyView.append(c);
             a.onClassChange()
         },
-        getSiteList: function(b) {
+        getSiteList: function(b, retryCount) {
+            retryCount = retryCount || 0;
             a.curReqMark = (new Date).format("ddhhmmss");
             $.ajax({
                 url: serverURI + "data/details/data_" + b + ".json",
                 type: "get",
                 async: !0,
-                timeout: 0,
+                timeout: 10000,
                 dataType: "json",
-                // data: {
-                //     classId: b,
-                //     curReqMark: a.curReqMark
-                // },
                 success: function(b) {
                     $("#web-site-body").empty();
                         b.curReqMark == a.curReqMark && (b = b.dataResult, $.isEmptyObject(b) || (a.loadSite(b), a.querySiteCout++))
@@ -734,7 +733,13 @@ searchEngineLogoPath = staticServerURI + "img/"; (function(f, h) {
                             $("#web-site-body").append(str);
                         }
                 },
-                error: function() {}
+                error: function() {
+                    if (retryCount < 2) {
+                        setTimeout(function() {
+                            a.getSiteList(b, retryCount + 1)
+                        }, 1000 * (retryCount + 1))
+                    }
+                }
             })
         },
         loadSite: function(b) {
@@ -1504,10 +1509,12 @@ searchEngineLogoPath = staticServerURI + "img/"; (function(f, h) {
             function() {
                 Search_Engine.searchInputViewFocus_isSys = !0;
                 Search_Engine.searchInputView.focus();
-                NavSite.siteListTypeSwitchBtn = MySwitchBtn.createSwitchBtn(NavSite.siteListTypeView, NavSite.siteListTypeChange);
-                var a = MyLocalStore.getSiteListForm();
-                $.isEmptyObject(__sys_t) ? 1 == a ? NavSite.siteListTypeSwitchBtn.setChecked(!1) : NavSite.siteListTypeSwitchBtn.setChecked(!0) : "i" == __sys_t ? NavSite.siteListTypeSwitchBtn.setChecked(!0) : NavSite.siteListTypeSwitchBtn.setChecked(!1);
-                NavSite.siteListTypeSwitchBtn.init();
+                NavSite.categoryLoadDef.done(function() {
+                    NavSite.siteListTypeSwitchBtn = MySwitchBtn.createSwitchBtn(NavSite.siteListTypeView, NavSite.siteListTypeChange);
+                    var a = MyLocalStore.getSiteListForm();
+                    $.isEmptyObject(__sys_t) ? 1 == a ? NavSite.siteListTypeSwitchBtn.setChecked(!1) : NavSite.siteListTypeSwitchBtn.setChecked(!0) : "i" == __sys_t ? NavSite.siteListTypeSwitchBtn.setChecked(!0) : NavSite.siteListTypeSwitchBtn.setChecked(!1);
+                    NavSite.siteListTypeSwitchBtn.init()
+                });
                 NavSite.initView(function() {
                     var a = MyLocalStore.getMetaSearchState();
                     "null" != String(a) && "" != a && "undefined" != String(a) && (a = "true" == a ? !0 : !1, a || (Search_Engine.isMetaSearch = a, Search_Engine.change2MetaSearch(a)));
